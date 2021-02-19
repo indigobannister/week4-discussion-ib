@@ -1,0 +1,70 @@
+---
+title: "Truckee River Flow"
+author: "Indigo Bannister"
+date: "1/28/2021"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE, message = FALSE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(tsibble)
+library(feasts)
+
+```
+
+
+```{r, echo = FALSE}
+
+truckee <- read_csv("truckee_river.csv", skip = 29) %>% 
+  slice(-1) %>% 
+  select(datetime, discharge_cfs) %>% 
+  mutate(datetime = mdy(datetime),
+         discharge_cfs = as.numeric(discharge_cfs)) %>% 
+  as_tsibble(key = NULL,
+             index = datetime)
+
+# truckee %>% 
+#   gg_season()
+
+```
+
+
+```{r, echo = FALSE}
+
+inputPanel(
+  
+  dateRangeInput(
+    
+    inputId = "dates",
+    label = "Select the date range:",
+    min = "2010-01-25",
+    max = "2021-01-24",
+    start = "2012-03-14",
+    end = "2016-05-12",
+    format = "yyyy-mm-dd"
+    
+  )
+  
+)
+
+truckee_react <- reactive({
+  
+  truckee %>% 
+    filter(datetime >= input$dates[1], 
+           datetime <= input$dates[2])
+  
+})
+
+
+renderPlot({
+  ggplot(data = truckee_react(), aes(x = datetime, y = discharge_cfs)) +
+    geom_line()
+  
+})
+
+```
+
